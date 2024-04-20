@@ -1,4 +1,4 @@
-# go-api-sv
+# go-server
 
 ## Best practices
 * https://golang.org/doc/effective_go
@@ -29,4 +29,4 @@
 * [Docker](https://docs.docker.com/get-started/)
 
 ## Launch project:
-* docker-compose up -d
+* docker-compose up

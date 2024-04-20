@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: build/docker/Dockerfile
+      args:
+        GO_IMAGE: ${GO_IMAGE}
+        APP_NAME: ${APP_NAME}
+        PORT: ${API_PORT}
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/${APP_NAME}
+    ports:
+      - ${API_PORT}:${API_PORT}
+    depends_on:
+      - mysqldb
+    restart: on-failure
+
+  mysqldb:
+    image: ${DB_IMAGE}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      TZ: Asia/Ho_Chi_Minh
+
+
