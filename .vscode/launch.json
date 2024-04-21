@@ -9,6 +9,14 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
+            "env": {
+                "DB_HOST": "localhost",
+                "DB_PORT": "3306",
+                "DB_USER": "root",
+                "DB_PASS": "abc@123",
+                "DB_NAME": "db_local",
+                "API_PORT": "8081"
+            },
             "program": "${workspaceFolder}/cmd"
         }
     ]
