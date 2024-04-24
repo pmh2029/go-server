@@ -8,11 +8,14 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.21.0
+	golang.org/x/oauth2 v0.19.0
 	gorm.io/driver/mysql v1.5.6
 	gorm.io/gorm v1.25.9
 )
 
 require (
+	cloud.google.com/go/compute v1.20.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/bytedance/sonic v1.11.3 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
