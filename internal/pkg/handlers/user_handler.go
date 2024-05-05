@@ -60,6 +60,26 @@ func (h *userHandler) Register(c *gin.Context) {
 
 	user, err = h.userUsecase.Create(c, user)
 	if err != nil {
+		if errors.Is(err, usecases.RegisterEmailExisted) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    1,
+				Message: "Email existed",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
+		if errors.Is(err, usecases.RegisterUsernameExisted) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    2,
+				Message: "Username existed",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code:    0,
 			Message: "Internal Server Error",

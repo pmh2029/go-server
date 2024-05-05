@@ -11,6 +11,10 @@ type BannerRepository interface {
 		ctx context.Context,
 		banner entities.Banner,
 	) (entities.Banner, error)
+	FindByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) ([]entities.Banner, error)
 }
 
 type BannerUsecase interface {
@@ -18,4 +22,8 @@ type BannerUsecase interface {
 		ctx context.Context,
 		req dtos.CreateBannerRequestDto,
 	) (entities.Banner, error)
+	FindByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) ([]entities.Banner, error)
 }

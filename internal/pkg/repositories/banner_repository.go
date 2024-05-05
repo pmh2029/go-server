@@ -32,3 +32,15 @@ func (r *bannerRepository) Create(
 	err := cdb.Create(&banner).Error
 	return banner, err
 }
+
+func (r *bannerRepository) FindByConditions(
+	ctx context.Context,
+	conditions map[string]interface{},
+) ([]entities.Banner, error) {
+	cdb := r.db.WithContext(ctx)
+
+	var banners []entities.Banner
+	err := cdb.Where(conditions).Find(&banners).Error
+
+	return banners, err
+}

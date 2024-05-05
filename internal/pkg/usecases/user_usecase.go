@@ -8,12 +8,16 @@ import (
 	"go-server/internal/pkg/domains/models/entities"
 	"go-server/pkg/shared/auth"
 	"go-server/pkg/shared/utils"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 var (
+	RegisterUsernameExisted = errors.New("Username existed")
+	RegisterEmailExisted    = errors.New("Email existed")
+
 	EmailNotFound = errors.New("Email not found")
 	WrongPassword = errors.New("Wrong password")
 
@@ -42,6 +46,15 @@ func (u *userUsecase) Create(ctx context.Context, user entities.User) (entities.
 	}
 	user.Password = hashedPass
 	user, err = u.userRepo.Create(ctx, user)
+	if err != nil {
+		if strings.Contains(err.Error(), "users.uni_users_username") {
+			return entities.User{}, RegisterUsernameExisted
+		}
+		if strings.Contains(err.Error(), "users.uni_users_email") {
+			return entities.User{}, RegisterEmailExisted
+		}
+		return entities.User{}, err
+	}
 	return user, err
 }
 

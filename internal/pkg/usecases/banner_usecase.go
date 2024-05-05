@@ -36,3 +36,12 @@ func (u *bannerUsecase) Create(
 	banner, err := u.bannerRepo.Create(ctx, banner)
 	return banner, err
 }
+
+func (u *bannerUsecase) FindByConditions(
+	ctx context.Context,
+	conditions map[string]interface{},
+) ([]entities.Banner, error) {
+	banners, err := u.bannerRepo.FindByConditions(ctx, map[string]interface{}{})
+
+	return banners, err
+}
