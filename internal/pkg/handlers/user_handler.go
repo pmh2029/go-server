@@ -315,3 +315,44 @@ func (h *userHandler) Update(c *gin.Context) {
 		},
 	})
 }
+
+func (h *userHandler) DetailUser(c *gin.Context) {
+	userID := c.MustGet("user_id")
+
+	if userID == nil {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    1,
+			Message: "Unauthorized",
+		})
+		return
+	}
+
+	user, err := h.userUsecase.TakeByConditions(c, map[string]interface{}{
+		"id": userID,
+	})
+	if err != nil {
+		if errors.Is(err, usecases.DetailUserIDNotFound) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    2,
+				Message: "User not found",
+				Error:   &dtos.ErrorResponse{ErrorDetails: err},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "OK",
+		Data: gin.H{
+			"user": user,
+		},
+	})
+}

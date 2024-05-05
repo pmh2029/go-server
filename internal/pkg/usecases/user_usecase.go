@@ -22,6 +22,7 @@ var (
 	WrongPassword = errors.New("Wrong password")
 
 	UpdateUserIDNotFound = errors.New("User not found")
+	DetailUserIDNotFound = errors.New("User not found")
 )
 
 type userUsecase struct {
@@ -58,12 +59,13 @@ func (u *userUsecase) Create(ctx context.Context, user entities.User) (entities.
 	return user, err
 }
 
-func (u *userUsecase) TakeByConditionsWithPassword(ctx context.Context, conditions map[string]interface{}, password string) (entities.User, error) {
+func (u *userUsecase) TakeByConditions(ctx context.Context, conditions map[string]interface{}) (entities.User, error) {
 	user, err := u.userRepo.TakeByConditions(ctx, conditions)
-
-	checkHashPass := utils.CheckPasswordHash(password, user.Password)
-	if !checkHashPass {
-		return entities.User{}, errors.New("Wrong password")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entities.User{}, DetailUserIDNotFound
+		}
+		return entities.User{}, err
 	}
 
 	return user, err

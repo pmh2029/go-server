@@ -18,7 +18,7 @@ type UserRepository interface {
 
 type UserUsecase interface {
 	Create(ctx context.Context, user entities.User) (entities.User, error)
-	TakeByConditionsWithPassword(ctx context.Context, conditions map[string]interface{}, password string) (entities.User, error)
+	TakeByConditions(ctx context.Context, conditions map[string]interface{}) (entities.User, error)
 	Login(
 		ctx context.Context,
 		req dtos.LoginRequestDto,

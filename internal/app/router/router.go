@@ -96,6 +96,7 @@ func (r *Router) SetupHandler() {
 		userApi := privateApi.Group("/user")
 		{
 			userApi.PATCH("/:user_id", userHandler.Update)
+			userApi.GET("/info", userHandler.DetailUser)
 		}
 
 		bannerApi := privateApi.Group("/banner")
