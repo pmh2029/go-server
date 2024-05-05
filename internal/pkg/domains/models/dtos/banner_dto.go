@@ -10,3 +10,12 @@ type CreateBannerRequestDto struct {
 type CreateBannerResponseDto struct {
 	Banner entities.Banner `json:"banner"`
 }
+
+type UpdateBannerRequestDto struct {
+	Name  string `json:"name"`
+	Image string `json:"image"`
+}
+
+type UpdateBannerResponseDto struct {
+	Banner entities.Banner `json:"banner"`
+}

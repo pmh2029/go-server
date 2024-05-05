@@ -15,6 +15,19 @@ type BannerRepository interface {
 		ctx context.Context,
 		conditions map[string]interface{},
 	) ([]entities.Banner, error)
+	Update(
+		ctx context.Context,
+		banner entities.Banner,
+		newBanner entities.Banner,
+	) (entities.Banner, error)
+	TakeByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) (entities.Banner, error)
+	DeleteByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) error
 }
 
 type BannerUsecase interface {
@@ -26,4 +39,17 @@ type BannerUsecase interface {
 		ctx context.Context,
 		conditions map[string]interface{},
 	) ([]entities.Banner, error)
+	Update(
+		ctx context.Context,
+		req dtos.UpdateBannerRequestDto,
+		conditions map[string]interface{},
+	) (entities.Banner, error)
+	TakeByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) (entities.Banner, error)
+	DeleteByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) error
 }

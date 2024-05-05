@@ -44,3 +44,32 @@ func (r *bannerRepository) FindByConditions(
 
 	return banners, err
 }
+
+func (r *bannerRepository) Update(
+	ctx context.Context,
+	banner entities.Banner,
+	newBanner entities.Banner,
+) (entities.Banner, error) {
+	cdb := r.db.WithContext(ctx)
+	err := cdb.Model(&banner).Updates(newBanner).Error
+	return banner, err
+}
+
+func (r *bannerRepository) TakeByConditions(
+	ctx context.Context,
+	conditions map[string]interface{},
+) (entities.Banner, error) {
+	cdb := r.db.WithContext(ctx)
+
+	var banner entities.Banner
+	err := cdb.Where(conditions).Take(&banner).Error
+	return banner, err
+}
+
+func (r *bannerRepository) DeleteByConditions(
+	ctx context.Context,
+	conditions map[string]interface{},
+) error {
+	cdb := r.db.WithContext(ctx)
+	return cdb.Where(conditions).Delete(&entities.Banner{}).Error
+}

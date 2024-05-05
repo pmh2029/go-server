@@ -102,6 +102,9 @@ func (r *Router) SetupHandler() {
 		{
 			bannerApi.POST("/", bannerHandler.CreateBanner)
 			bannerApi.GET("/", bannerHandler.ListBanner)
+			bannerApi.PATCH("/:banner_id", bannerHandler.Update)
+			bannerApi.GET("/:banner_id", bannerHandler.DetailBanner)
+			bannerApi.DELETE("/:banner_id", bannerHandler.DeleteBanner)
 		}
 	}
 }
