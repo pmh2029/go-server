@@ -59,6 +59,7 @@ func (r *Router) SetupHandler() {
 	userHandler := handlers.NewUserHandler(r.Logger, r.DB)
 	uploadHandler := handlers.NewUploadHandler(cld, r.Logger)
 	bannerHandler := handlers.NewBannerHandler(r.Logger, r.DB)
+	categoryHandler := handlers.NewCategoryHandler(r.Logger, r.DB)
 
 	// health check
 	r.Engine.GET("/", func(c *gin.Context) {
@@ -106,6 +107,15 @@ func (r *Router) SetupHandler() {
 			bannerApi.PATCH("/:banner_id", bannerHandler.Update)
 			bannerApi.GET("/:banner_id", bannerHandler.DetailBanner)
 			bannerApi.DELETE("/:banner_id", bannerHandler.DeleteBanner)
+		}
+
+		categoryApi := privateApi.Group("/category")
+		{
+			categoryApi.POST("/", categoryHandler.CreateCategory)
+			categoryApi.GET("/", categoryHandler.ListCategory)
+			categoryApi.PATCH("/:category_id", categoryHandler.Update)
+			categoryApi.GET("/:category_id", categoryHandler.DetailCategory)
+			categoryApi.DELETE("/:category_id", categoryHandler.DeleteCategory)
 		}
 	}
 }

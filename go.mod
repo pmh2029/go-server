@@ -7,6 +7,7 @@ require (
 	github.com/gin-contrib/cors v1.7.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.19.0
+	github.com/google/uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.21.0
 	golang.org/x/oauth2 v0.19.0
@@ -16,7 +17,6 @@ require (
 
 require (
 	github.com/creasty/defaults v1.5.1 // indirect
-	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/schema v1.2.0 // indirect
 )
 
