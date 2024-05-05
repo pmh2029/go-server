@@ -33,13 +33,13 @@ func (r *Router) InitializeRouter(logger *logrus.Logger) {
 		AllowWebSockets:  true,
 		AllowFiles:       true,
 	}))
-	r.Engine.Use(func(c *gin.Context) {
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-		c.Next()
-	})
+	// r.Engine.Use(func(c *gin.Context) {
+	// 	if c.Request.Method == "OPTIONS" {
+	// 		c.AbortWithStatus(204)
+	// 		return
+	// 	}
+	// 	c.Next()
+	// })
 	r.Logger = logger
 }
 
@@ -54,17 +54,6 @@ func (r *Router) SetupHandler() {
 		return
 	}
 
-	r.Engine.Use(gin.Logger())
-	r.Engine.Use(gin.Recovery())
-	r.Engine.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"*"},
-		AllowCredentials: true,
-		ExposeHeaders:    []string{"Set-Cookie"},
-		AllowWebSockets:  true,
-		AllowFiles:       true,
-	}))
 	r.Engine.Use(middleware.RequestID())
 
 	userHandler := handlers.NewUserHandler(r.Logger, r.DB)
