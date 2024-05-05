@@ -16,6 +16,8 @@ import (
 var (
 	EmailNotFound = errors.New("Email not found")
 	WrongPassword = errors.New("Wrong password")
+
+	UpdateUserIDNotFound = errors.New("User not found")
 )
 
 type userUsecase struct {
@@ -82,4 +84,25 @@ func (u *userUsecase) Login(
 	}
 
 	return user, accessToken, nil
+}
+
+func (u *userUsecase) Update(
+	ctx context.Context,
+	conditions map[string]interface{},
+	req dtos.UpdateUserRequestDto,
+) (entities.User, error) {
+	user, err := u.userRepo.TakeByConditions(ctx, conditions)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entities.User{}, UpdateUserIDNotFound
+		}
+		return entities.User{}, err
+	}
+
+	user, err = u.userRepo.Update(ctx, user, req)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	return user, nil
 }

@@ -7,10 +7,12 @@ import (
 	"go-server/internal/pkg/domains/models/entities"
 	"go-server/internal/pkg/repositories"
 	"go-server/internal/pkg/usecases"
+	"go-server/pkg/shared/auth"
 	"go-server/pkg/shared/utils"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -68,13 +70,32 @@ func (h *userHandler) Register(c *gin.Context) {
 		return
 	}
 
+	accessToken, err := auth.GenerateHS256JWT(map[string]interface{}{
+		"user_id": user.ID,
+		"sub":     user.Username,
+		"email":   user.Email,
+	})
+	if err != nil {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    0,
+			Message: "Internal Server Error",
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, dtos.BaseResponse{
 		Code:    0,
 		Message: "OK",
 		Data: dtos.RegisterResponseDto{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email,
+			User: entities.User{
+				ID:       user.ID,
+				Username: user.Username,
+				Email:    user.Email,
+			},
+			AccessToken: accessToken,
 		},
 	})
 }
@@ -205,10 +226,72 @@ func (h *userHandler) Login(c *gin.Context) {
 		Code: 0,
 		Data: dtos.LoginResponseDto{
 			User: entities.User{
-				ID: user.ID,
+				ID:       user.ID,
+				Username: user.Username,
+				Email:    user.Email,
 			},
 			AccessToken: accessToken,
 		},
 		Message: "Login success",
+	})
+}
+
+func (h *userHandler) Update(c *gin.Context) {
+	userIDParam := c.Param("user_id")
+
+	userID, err := strconv.Atoi(userIDParam)
+	if err != nil {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
+			Message: BadRequest,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	req := dtos.UpdateUserRequestDto{}
+	err = c.ShouldBindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
+			Message: BadRequest,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	user, err := h.userUsecase.Update(c, map[string]interface{}{
+		"id": userID,
+	}, req)
+	if err != nil {
+		if errors.Is(err, usecases.UpdateUserIDNotFound) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    1,
+				Message: "User not found",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "Updated success",
+		Data: dtos.UpdateUserResponseDto{
+			User: user,
+		},
 	})
 }

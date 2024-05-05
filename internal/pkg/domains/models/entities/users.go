@@ -17,7 +17,7 @@ type User struct {
 	Gender   int        `json:"gender,omitempty"` // 1: nam, 2: nữ
 	Contact  string     `json:"contact,omitempty"`
 	Password string     `gorm:"column:password;not null" json:"password,omitempty"`
-	IsAdmin  bool       `gorm:"default:false"`
+	IsAdmin  bool       `gorm:"default:false" json:"is_admin"`
 	BaseEntity
 }
 

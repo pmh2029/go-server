@@ -93,6 +93,11 @@ func (r *Router) SetupHandler() {
 	privateApi.Use(middleware.CheckAuthentication())
 
 	{
+		userApi := privateApi.Group("/user")
+		{
+			userApi.PATCH("/:user_id", userHandler.Update)
+		}
+
 		bannerApi := privateApi.Group("/banner")
 		{
 			bannerApi.POST("/", bannerHandler.CreateBanner)

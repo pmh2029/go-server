@@ -9,6 +9,11 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user entities.User) (entities.User, error)
 	TakeByConditions(ctx context.Context, conditions map[string]interface{}) (entities.User, error)
+	Update(
+		ctx context.Context,
+		user entities.User,
+		req dtos.UpdateUserRequestDto,
+	) (entities.User, error)
 }
 
 type UserUsecase interface {
@@ -18,4 +23,9 @@ type UserUsecase interface {
 		ctx context.Context,
 		req dtos.LoginRequestDto,
 	) (entities.User, string, error)
+	Update(
+		ctx context.Context,
+		conditions map[string]interface{},
+		req dtos.UpdateUserRequestDto,
+	) (entities.User, error)
 }

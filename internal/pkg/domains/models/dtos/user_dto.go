@@ -9,9 +9,8 @@ type RegisterRequestDto struct {
 }
 
 type RegisterResponseDto struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	User        entities.User `json:"user"`
+	AccessToken string        `json:"access_token"`
 }
 
 type LoginRequestDto struct {
@@ -22,4 +21,16 @@ type LoginRequestDto struct {
 type LoginResponseDto struct {
 	User        entities.User `json:"user"`
 	AccessToken string        `json:"access_token"`
+}
+
+type UpdateUserRequestDto struct {
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+	BirthDay int    `json:"birth_day"`
+	Gender   int    `json:"gender"`
+	Contact  string `json:"contact"`
+}
+
+type UpdateUserResponseDto struct {
+	User entities.User `json:"user"`
 }
