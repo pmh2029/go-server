@@ -40,8 +40,8 @@ func (h *userHandler) Register(c *gin.Context) {
 	req := dtos.RegisterRequestDto{}
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dtos.BaseResponse{
-			Code:    1,
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
 			Message: "Bad Request",
 			Error: &dtos.ErrorResponse{
 				ErrorDetails: err,

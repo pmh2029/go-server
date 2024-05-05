@@ -3,9 +3,12 @@ package router
 import (
 	"go-server/internal/pkg/domains/models/dtos"
 	"go-server/internal/pkg/handlers"
+	"go-server/pkg/shared/middleware"
 	"go-server/pkg/shared/validator"
 	"net/http"
+	"os"
 
+	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -42,8 +45,18 @@ func (r *Router) InitializeRouter(logger *logrus.Logger) {
 
 func (r *Router) SetupHandler() {
 	_ = validator.New()
+	cld, err := cloudinary.NewFromParams(
+		os.Getenv("CLOUDINARY_CLOUD_NAME"),
+		os.Getenv("CLOUDINARY_API_KEY"),
+		os.Getenv("CLOUDINARY_API_SECRET"),
+	)
+	if err != nil {
+		return
+	}
 
 	userHandler := handlers.NewUserHandler(r.Logger, r.DB)
+	uploadHandler := handlers.NewUploadHandler(cld, r.Logger)
+	bannerHandler := handlers.NewBannerHandler(r.Logger, r.DB)
 
 	// health check
 	r.Engine.GET("/", func(c *gin.Context) {
@@ -65,6 +78,22 @@ func (r *Router) SetupHandler() {
 			authApi.POST("/login", userHandler.Login)
 			authApi.GET("/google/login", userHandler.GoogleLogin)
 			authApi.GET("/google/callback", userHandler.GoogleCallback)
+		}
+
+		//
+		uploadApi := publicApi.Group("/upload")
+		{
+			uploadApi.POST("/", uploadHandler.FileUpload)
+		}
+	}
+
+	privateApi := r.Engine.Group("/api")
+	privateApi.Use(middleware.CheckAuthentication())
+
+	{
+		bannerApi := privateApi.Group("/banner")
+		{
+			bannerApi.POST("/", bannerHandler.CreateBanner)
 		}
 	}
 }

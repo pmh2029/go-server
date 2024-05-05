@@ -3,6 +3,7 @@ module go-server
 go 1.22.2
 
 require (
+	github.com/cloudinary/cloudinary-go/v2 v2.7.0
 	github.com/gin-contrib/cors v1.7.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.19.0
@@ -11,6 +12,12 @@ require (
 	golang.org/x/oauth2 v0.19.0
 	gorm.io/driver/mysql v1.5.6
 	gorm.io/gorm v1.25.9
+)
+
+require (
+	github.com/creasty/defaults v1.5.1 // indirect
+	github.com/google/uuid v1.2.0 // indirect
+	github.com/gorilla/schema v1.2.0 // indirect
 )
 
 require (
