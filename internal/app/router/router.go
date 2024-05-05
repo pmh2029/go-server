@@ -54,6 +54,19 @@ func (r *Router) SetupHandler() {
 		return
 	}
 
+	r.Engine.Use(gin.Logger())
+	r.Engine.Use(gin.Recovery())
+	r.Engine.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"*"},
+		AllowCredentials: true,
+		ExposeHeaders:    []string{"Set-Cookie"},
+		AllowWebSockets:  true,
+		AllowFiles:       true,
+	}))
+	r.Engine.Use(middleware.RequestID())
+
 	userHandler := handlers.NewUserHandler(r.Logger, r.DB)
 	uploadHandler := handlers.NewUploadHandler(cld, r.Logger)
 	bannerHandler := handlers.NewBannerHandler(r.Logger, r.DB)
