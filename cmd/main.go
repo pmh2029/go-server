@@ -5,6 +5,7 @@ import (
 	"go-server/internal/pkg/migrations"
 	"go-server/pkg/shared/database"
 	"go-server/pkg/shared/logging"
+	"go-server/pkg/shared/logging/hooks"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,8 @@ import (
 
 func main() {
 	logger := logging.NewLogger()
+
+	logger.AddHook(&hooks.RequestIDHook{})
 
 	logger.Info("Init Database")
 	db, err := database.NewDB(logger)

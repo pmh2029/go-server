@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"go-server/internal/pkg/domains/interfaces"
 	"go-server/internal/pkg/domains/models/dtos"
 	"go-server/internal/pkg/domains/models/entities"
@@ -40,9 +41,10 @@ func (h *userHandler) Register(c *gin.Context) {
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dtos.BaseResponse{
-			Code: 1,
+			Code:    1,
+			Message: "Bad Request",
 			Error: &dtos.ErrorResponse{
-				ErrorDetails: err.Error(),
+				ErrorDetails: err,
 			},
 		})
 		return
@@ -57,9 +59,9 @@ func (h *userHandler) Register(c *gin.Context) {
 	user, err = h.userUsecase.Create(c, user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
-			Code: 1,
+			Code:    0,
+			Message: "Internal Server Error",
 			Error: &dtos.ErrorResponse{
-				ErrorMessage: err.Error(),
 				ErrorDetails: err.Error(),
 			},
 		})
@@ -67,7 +69,8 @@ func (h *userHandler) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dtos.BaseResponse{
-		Code: 0,
+		Code:    0,
+		Message: "OK",
 		Data: dtos.RegisterResponseDto{
 			ID:       user.ID,
 			Username: user.Username,
@@ -96,7 +99,6 @@ func (h *userHandler) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code: 1,
 			Error: &dtos.ErrorResponse{
-				ErrorMessage: err.Error(),
 				ErrorDetails: err.Error(),
 			},
 		})
@@ -111,7 +113,6 @@ func (h *userHandler) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusTemporaryRedirect, dtos.BaseResponse{
 			Code: 2,
 			Error: &dtos.ErrorResponse{
-				ErrorMessage: "Invalid state",
 				ErrorDetails: "Invalid state",
 			},
 		})
@@ -123,7 +124,6 @@ func (h *userHandler) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code: 3,
 			Error: &dtos.ErrorResponse{
-				ErrorMessage: err.Error(),
 				ErrorDetails: err.Error(),
 			},
 		})
@@ -135,7 +135,6 @@ func (h *userHandler) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code: 4,
 			Error: &dtos.ErrorResponse{
-				ErrorMessage: err.Error(),
 				ErrorDetails: err.Error(),
 			},
 		})
@@ -148,7 +147,6 @@ func (h *userHandler) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code: 5,
 			Error: &dtos.ErrorResponse{
-				ErrorMessage: err.Error(),
 				ErrorDetails: err.Error(),
 			},
 		})
@@ -157,4 +155,60 @@ func (h *userHandler) GoogleCallback(c *gin.Context) {
 
 	// send back response to browser
 	log.Println(string(contents))
+}
+
+func (h *userHandler) Login(c *gin.Context) {
+	req := dtos.LoginRequestDto{}
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dtos.BaseResponse{
+			Code: 400,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	user, accessToken, err := h.userUsecase.Login(c, req)
+	if err != nil {
+		if errors.Is(err, usecases.EmailNotFound) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    1,
+				Message: "Email not found",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
+		if errors.Is(err, usecases.WrongPassword) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    2,
+				Message: "Wrong password",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code: 0,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code: 0,
+		Data: dtos.LoginResponseDto{
+			User: entities.User{
+				ID: user.ID,
+			},
+			AccessToken: accessToken,
+		},
+		Message: "Login success",
+	})
 }

@@ -62,6 +62,7 @@ func (r *Router) SetupHandler() {
 		authApi := publicApi.Group("/auth")
 		{
 			authApi.POST("/register", userHandler.Register)
+			authApi.POST("/login", userHandler.Login)
 			authApi.GET("/google/login", userHandler.GoogleLogin)
 			authApi.GET("/google/callback", userHandler.GoogleCallback)
 		}
