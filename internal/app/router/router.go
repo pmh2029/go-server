@@ -101,6 +101,7 @@ func (r *Router) SetupHandler() {
 		bannerApi := privateApi.Group("/banner")
 		{
 			bannerApi.POST("/", bannerHandler.CreateBanner)
+			bannerApi.GET("/", bannerHandler.ListBanner)
 		}
 	}
 }

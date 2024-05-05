@@ -63,3 +63,24 @@ func (h *bannerHandler) CreateBanner(c *gin.Context) {
 		},
 	})
 }
+
+func (h *bannerHandler) ListBanner(c *gin.Context) {
+	banners, err := h.bannerUsecase.FindByConditions(c, map[string]interface{}{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "OK",
+		Data: gin.H{
+			"banners": banners,
+		},
+	})
+}
