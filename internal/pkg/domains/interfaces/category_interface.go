@@ -32,6 +32,10 @@ type CategoryRepository interface {
 		ctx context.Context,
 		conditions map[string]interface{},
 	) (entities.Category, error)
+	PluckIDByConditions(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) ([]int, error)
 }
 
 type CategoryUsecase interface {

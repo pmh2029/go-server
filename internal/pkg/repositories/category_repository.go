@@ -84,3 +84,15 @@ func (r *categoryRepository) TakeByConditionsWithPreload(
 	err := cdb.Preload("Places").Where(conditions).Take(&category).Error
 	return category, err
 }
+
+func (r *categoryRepository) PluckIDByConditions(
+	ctx context.Context,
+	conditions map[string]interface{},
+) ([]int, error) {
+	cdb := r.db.WithContext(ctx)
+
+	var ids []int
+	err := cdb.Model(&entities.Category{}).Where(conditions).Pluck("id", &ids).Error
+
+	return ids, err
+}

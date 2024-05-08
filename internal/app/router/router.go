@@ -60,6 +60,7 @@ func (r *Router) SetupHandler() {
 	uploadHandler := handlers.NewUploadHandler(cld, r.Logger)
 	bannerHandler := handlers.NewBannerHandler(r.Logger, r.DB)
 	categoryHandler := handlers.NewCategoryHandler(r.Logger, r.DB)
+	placeHandler := handlers.NewPlaceHandler(r.Logger, r.DB)
 
 	// health check
 	r.Engine.GET("/", func(c *gin.Context) {
@@ -116,6 +117,16 @@ func (r *Router) SetupHandler() {
 			categoryApi.PATCH("/:category_id", categoryHandler.Update)
 			categoryApi.GET("/:category_id", categoryHandler.DetailCategory)
 			categoryApi.DELETE("/:category_id", categoryHandler.DeleteCategory)
+		}
+
+		placeApi := privateApi.Group("/place")
+		{
+			placeApi.POST("/", placeHandler.CreatePlace)
+			placeApi.GET("/", placeHandler.ListPlacePaginate)
+			placeApi.PATCH("/:place_id", placeHandler.UpdatePlace)
+			placeApi.GET("/:place_id", placeHandler.DetailPlace)
+			placeApi.DELETE("/:place_id", placeHandler.DeletePlace)
+			placeApi.GET("/all_places", placeHandler.ListAllPlace)
 		}
 	}
 }

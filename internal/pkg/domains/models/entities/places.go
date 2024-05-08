@@ -1,15 +1,28 @@
 package entities
 
+import (
+	"strings"
+
+	"gorm.io/gorm"
+)
+
 type Place struct {
-	ID          int        `gorm:"column:id;primaryKey;type:bigint;not null;autoIncrement" mapstructure:"id" json:"id"`
-	Name        string     `gorm:"not null" json:"name"`
-	Address     string     `gorm:"not null" json:"address"`
-	Latitude    float64    `gorm:"not null" json:"latitude"`
-	Longitude   float64    `gorm:"not null" json:"longitude"`
-	Description string     `json:"description"`
-	Images      string     `gorm:"not null" json:"images"`
-	Price       float64    `json:"price"`
-	Rate        float64    `json:"rate"`
-	Categories  []Category `gorm:"many2many:place_categories"`
+	ID             int        `gorm:"column:id;primaryKey;type:bigint;not null;autoIncrement" mapstructure:"id" json:"id"`
+	Name           string     `gorm:"not null" json:"name,omitempty"`
+	Address        string     `gorm:"not null" json:"address,omitempty"`
+	Latitude       float64    `gorm:"not null" json:"latitude,omitempty"`
+	Longitude      float64    `gorm:"not null" json:"longitude,omitempty"`
+	Description    string     `json:"description,omitempty"`
+	Images         string     `gorm:"not null" json:"-"`
+	Price          float64    `json:"price,omitempty"`
+	Rate           float64    `json:"rate,omitempty"`
+	Categories     []Category `gorm:"many2many:place_categories" json:"categories,omitempty"`
+	ImagesResponse []string   `gorm:"-" json:"images,omitempty"`
 	BaseEntity
+}
+
+func (i *Place) AfterFind(tx *gorm.DB) (err error) {
+	i.ImagesResponse = strings.Split(i.Images, "|")
+	i.ImagesResponse = i.ImagesResponse[1 : len(i.ImagesResponse)-1]
+	return
 }
