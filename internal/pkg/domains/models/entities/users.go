@@ -21,6 +21,7 @@ type User struct {
 	Password     string     `gorm:"column:password;not null" json:"password,omitempty"`
 	IsAdmin      bool       `gorm:"default:false" json:"is_admin"`
 	BirthDayUnix int64      `gorm:"-" json:"birth_day,omitempty"`
+	Trips        []Trip     `gorm:"many2many:user_trips"`
 	BaseEntity
 }
 

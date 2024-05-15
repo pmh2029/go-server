@@ -13,10 +13,12 @@ func Migrate(db *gorm.DB) error {
 	}
 
 	err = db.AutoMigrate(
-		entities.User{},
 		entities.Banner{},
 		entities.Category{},
 		entities.Place{},
+		entities.Trip{},
+		entities.User{},
+		entities.Day{},
 	)
 
 	return err
