@@ -99,7 +99,7 @@ func (r *Router) SetupHandler() {
 	adminApi.Use(middleware.CheckAuthentication(), middleware.CheckRole())
 
 	{
-		userApi := privateApi.Group("/user")
+		userApi := privateApi.Group("/app/user")
 		{
 			userApi.PATCH("/:user_id", userHandler.Update)
 			userApi.GET("/info", userHandler.DetailUser)
