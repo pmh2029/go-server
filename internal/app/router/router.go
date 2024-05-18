@@ -81,6 +81,7 @@ func (r *Router) SetupHandler() {
 		{
 			authApi.POST("/register", userHandler.Register)
 			authApi.POST("/login", userHandler.Login)
+			authApi.POST("/admin/login", userHandler.AdminLogin)
 			authApi.GET("/google/login", userHandler.GoogleLogin)
 			authApi.GET("/google/callback", userHandler.GoogleCallback)
 		}
@@ -94,6 +95,8 @@ func (r *Router) SetupHandler() {
 
 	privateApi := r.Engine.Group("/api")
 	privateApi.Use(middleware.CheckAuthentication())
+	adminApi := r.Engine.Group("/api")
+	adminApi.Use(middleware.CheckAuthentication(), middleware.CheckRole())
 
 	{
 		userApi := privateApi.Group("/user")
@@ -102,7 +105,7 @@ func (r *Router) SetupHandler() {
 			userApi.GET("/info", userHandler.DetailUser)
 		}
 
-		bannerApi := privateApi.Group("/banner")
+		bannerApi := adminApi.Group("/banner")
 		{
 			bannerApi.POST("/", bannerHandler.CreateBanner)
 			bannerApi.GET("/", bannerHandler.ListBanner)
@@ -111,7 +114,13 @@ func (r *Router) SetupHandler() {
 			bannerApi.DELETE("/:banner_id", bannerHandler.DeleteBanner)
 		}
 
-		categoryApi := privateApi.Group("/category")
+		bannerAppApi := privateApi.Group("/app/banner")
+		{
+			bannerAppApi.GET("/", bannerHandler.ListBanner)
+			bannerAppApi.GET("/:banner_id", bannerHandler.DetailBanner)
+		}
+
+		categoryApi := adminApi.Group("/category")
 		{
 			categoryApi.POST("/", categoryHandler.CreateCategory)
 			categoryApi.GET("/", categoryHandler.ListCategory)
@@ -120,7 +129,13 @@ func (r *Router) SetupHandler() {
 			categoryApi.DELETE("/:category_id", categoryHandler.DeleteCategory)
 		}
 
-		placeApi := privateApi.Group("/place")
+		categoryAppApi := privateApi.Group("/app/category")
+		{
+			categoryAppApi.GET("/", categoryHandler.ListCategory)
+			categoryAppApi.GET("/:category_id", categoryHandler.DetailCategory)
+		}
+
+		placeApi := adminApi.Group("/place")
 		{
 			placeApi.POST("/", placeHandler.CreatePlace)
 			placeApi.GET("/", placeHandler.ListPlacePaginate)
@@ -128,6 +143,13 @@ func (r *Router) SetupHandler() {
 			placeApi.GET("/:place_id", placeHandler.DetailPlace)
 			placeApi.DELETE("/:place_id", placeHandler.DeletePlace)
 			placeApi.GET("/all_places", placeHandler.ListAllPlace)
+		}
+
+		placeAppApi := privateApi.Group("/app/place")
+		{
+			placeAppApi.GET("/", placeHandler.ListPlacePaginate)
+			placeAppApi.GET("/:place_id", placeHandler.DetailPlace)
+			placeAppApi.GET("/all_places", placeHandler.ListAllPlace)
 		}
 
 		tripApi := privateApi.Group("/trip")

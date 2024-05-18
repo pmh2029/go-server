@@ -90,9 +90,10 @@ func (u *userUsecase) Login(
 	}
 
 	accessToken, err := auth.GenerateHS256JWT(map[string]interface{}{
-		"user_id": user.ID,
-		"sub":     user.Username,
-		"email":   user.Email,
+		"user_id":  user.ID,
+		"sub":      user.Username,
+		"email":    user.Email,
+		"is_admin": user.IsAdmin,
 	})
 	if err != nil {
 		return entities.User{}, "", err

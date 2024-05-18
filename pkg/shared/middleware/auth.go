@@ -35,6 +35,7 @@ func CheckAuthentication() gin.HandlerFunc {
 
 		decodedToken, err := auth.Decode(token)
 		userID := decodedToken.Claims.(jwt.MapClaims)["user_id"]
+		isAdmin := decodedToken.Claims.(jwt.MapClaims)["is_admin"]
 
 		if len(fields) != 3 || !auth.VerifyJWT(token) || err != nil {
 			c.JSON(http.StatusUnauthorized, dtos.BaseResponse{
@@ -49,6 +50,7 @@ func CheckAuthentication() gin.HandlerFunc {
 		}
 
 		c.Set("user_id", userID)
+		c.Set("is_admin", isAdmin)
 		c.Next()
 	}
 }

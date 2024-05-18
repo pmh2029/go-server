@@ -91,9 +91,10 @@ func (h *userHandler) Register(c *gin.Context) {
 	}
 
 	accessToken, err := auth.GenerateHS256JWT(map[string]interface{}{
-		"user_id": user.ID,
-		"sub":     user.Username,
-		"email":   user.Email,
+		"user_id":  user.ID,
+		"sub":      user.Username,
+		"email":    user.Email,
+		"is_admin": user.IsAdmin,
 	})
 	if err != nil {
 		c.JSON(http.StatusOK, dtos.BaseResponse{
@@ -237,6 +238,74 @@ func (h *userHandler) Login(c *gin.Context) {
 			Code: 0,
 			Error: &dtos.ErrorResponse{
 				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code: 0,
+		Data: dtos.LoginResponseDto{
+			User: entities.User{
+				ID:       user.ID,
+				Username: user.Username,
+				Email:    user.Email,
+			},
+			AccessToken: accessToken,
+		},
+		Message: "Login success",
+	})
+}
+
+func (h *userHandler) AdminLogin(c *gin.Context) {
+	req := dtos.LoginRequestDto{}
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dtos.BaseResponse{
+			Code: 400,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	user, accessToken, err := h.userUsecase.Login(c, req)
+	if err != nil {
+		if errors.Is(err, usecases.EmailNotFound) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    1,
+				Message: "Email not found",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
+		if errors.Is(err, usecases.WrongPassword) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    2,
+				Message: "Wrong password",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code: 0,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+	if !user.IsAdmin {
+		c.JSON(http.StatusForbidden, dtos.BaseResponse{
+			Code:    3,
+			Message: "Forbidden",
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: "Role invalid",
 			},
 		})
 		return
