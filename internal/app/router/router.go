@@ -152,7 +152,7 @@ func (r *Router) SetupHandler() {
 			placeAppApi.GET("/all_places", placeHandler.ListAllPlace)
 		}
 
-		tripApi := privateApi.Group("/trip")
+		tripApi := privateApi.Group("/app/trip")
 		{
 			tripApi.POST("/", tripHandler.CreateTrip)
 			tripApi.GET("/:user_id", tripHandler.ListTrip)
