@@ -620,6 +620,6 @@ func (h *userHandler) ChangePassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dtos.BaseResponse{
 		Code:    0,
-		Message: "OK",
+		Message: "Change password success",
 	})
 }
