@@ -19,6 +19,7 @@ func Migrate(db *gorm.DB) error {
 		entities.Trip{},
 		entities.User{},
 		entities.Day{},
+		entities.Comment{},
 	)
 
 	return err

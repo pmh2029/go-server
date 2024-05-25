@@ -34,3 +34,14 @@ type UpdateUserRequestDto struct {
 type UpdateUserResponseDto struct {
 	User entities.User `json:"user"`
 }
+
+type ForgotPasswordRequestDto struct {
+	Email        string `json:"email" binding:"required,email"`
+	ReceiveEmail string `json:"receive_email" binding:"required,email"`
+}
+
+type ChangePasswordRequestDto struct {
+	OldPassword     string `json:"old_password" binding:"required,min=1"`
+	NewPassword     string `json:"new_password" binding:"required,min=1"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,min=1"`
+}

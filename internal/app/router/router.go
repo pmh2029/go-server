@@ -84,6 +84,7 @@ func (r *Router) SetupHandler() {
 			authApi.POST("/admin/login", userHandler.AdminLogin)
 			authApi.GET("/google/login", userHandler.GoogleLogin)
 			authApi.GET("/google/callback", userHandler.GoogleCallback)
+			authApi.POST("/forgot_password", userHandler.ForgotPassword)
 		}
 
 		//
@@ -103,6 +104,7 @@ func (r *Router) SetupHandler() {
 		{
 			userApi.PATCH("/:user_id", userHandler.Update)
 			userApi.GET("/info", userHandler.DetailUser)
+			userApi.POST("/change_password", userHandler.ChangePassword)
 		}
 
 		bannerApi := adminApi.Group("/banner")
