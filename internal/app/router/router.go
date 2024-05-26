@@ -86,6 +86,7 @@ func (r *Router) SetupHandler() {
 			authApi.GET("/google/login", userHandler.GoogleLogin)
 			authApi.GET("/google/callback", userHandler.GoogleCallback)
 			authApi.POST("/forgot_password", userHandler.ForgotPassword)
+			authApi.POST("/logout", userHandler.Logout)
 		}
 
 		//
