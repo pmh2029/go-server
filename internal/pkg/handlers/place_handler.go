@@ -500,7 +500,7 @@ func (h *placeHandler) ListComment(c *gin.Context) {
 		return
 	}
 
-	err = h.db.Scopes(database.Pagination(pageData)).Where(conditions).Order(orderCondition).Find(&comments).Error
+	err = h.db.Scopes(database.Pagination(pageData)).Preload("User").Where(conditions).Order(orderCondition).Find(&comments).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code:    0,
