@@ -45,3 +45,8 @@ type ChangePasswordRequestDto struct {
 	NewPassword     string `json:"new_password" binding:"required,min=1"`
 	ConfirmPassword string `json:"confirm_password" binding:"required,min=1"`
 }
+
+type UpdateStatusRequestDto struct {
+	UserID int `json:"user_id" binding:"required,min=1"`
+	Status int `json:"status" binding:"required,min=1,max=2"`
+}

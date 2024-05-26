@@ -9,6 +9,7 @@ import (
 	"go-server/internal/pkg/services"
 	"go-server/internal/pkg/usecases"
 	"go-server/pkg/shared/auth"
+	"go-server/pkg/shared/database"
 	"go-server/pkg/shared/utils"
 	"io"
 	"log"
@@ -718,5 +719,149 @@ func (h *userHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, dtos.BaseResponse{
 		Code:    0,
 		Message: "Logout success",
+	})
+}
+
+func (h *userHandler) UpdateStatus(c *gin.Context) {
+	req := dtos.UpdateStatusRequestDto{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
+			Message: BadRequest,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	var user entities.User
+	err := h.db.Where("id = ?", req.UserID).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    1,
+				Message: "User not found",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: "invalid id",
+				},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	err = h.db.Model(&user).Where("id = ?", user.ID).UpdateColumn("status", req.Status).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	var message string
+	if req.Status == 1 {
+		message = "Activate account success"
+	} else {
+		go func(userID int) {
+			err = h.db.Where("id = ?", userID).Delete(&entities.UserToken{}).Error
+			if err != nil {
+				return
+			}
+		}(user.ID)
+		message = "Deactivate account success"
+	}
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: message,
+	})
+}
+
+func (h *userHandler) ListUserPaginate(c *gin.Context) {
+	pageData := make(map[string]int)
+	conditions := make(map[string]interface{})
+	pageQuery, ok := c.GetQuery("page")
+	if ok {
+		page, err := strconv.Atoi(pageQuery)
+		if err != nil {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    400,
+				Message: "Bad Request",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		pageData["page"] = page
+	} else {
+		pageData["page"] = 1
+	}
+
+	perPageQuery, ok := c.GetQuery("per_page")
+	if ok {
+		perPage, err := strconv.Atoi(perPageQuery)
+		if err != nil {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    400,
+				Message: "Bad Request",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		pageData["per_page"] = perPage
+	} else {
+		pageData["per_page"] = 20
+	}
+
+	if status, ok := c.GetQuery("status"); ok {
+		conditions["status"] = status
+	}
+
+	var count int64
+	err := h.db.Model(&entities.User{}).Where(conditions).Count(&count).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	var users []entities.User
+	err = h.db.Scopes(database.Pagination(pageData)).Where(conditions).Order("updated_at DESC").Find(&users).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "OK",
+		Data: gin.H{
+			"users":        users,
+			"page":         pageData["page"],
+			"per_page":     pageData["per_page"],
+			"total_record": count,
+			"total_page":   utils.CalcTotalPage(count, pageData["per_page"]),
+		},
 	})
 }

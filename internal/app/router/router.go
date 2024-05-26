@@ -87,6 +87,7 @@ func (r *Router) SetupHandler() {
 			authApi.GET("/google/callback", userHandler.GoogleCallback)
 			authApi.POST("/forgot_password", userHandler.ForgotPassword)
 			authApi.POST("/logout", userHandler.Logout)
+			authApi.POST("/admin/logout", userHandler.Logout)
 		}
 
 		//
@@ -168,6 +169,12 @@ func (r *Router) SetupHandler() {
 			commentAppApi.POST("/", commentHandler.Create)
 			commentAppApi.PATCH("/comment_id", commentHandler.Update)
 			commentAppApi.DELETE("/comment_id", commentHandler.Delete)
+		}
+
+		userCmsApi := adminApi.Group("/user")
+		{
+			userCmsApi.GET("/", userHandler.ListUserPaginate)
+			userCmsApi.POST("/change_status", userHandler.UpdateStatus)
 		}
 	}
 }
