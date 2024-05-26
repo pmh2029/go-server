@@ -411,7 +411,7 @@ func (h *placeHandler) ListAllPlace(c *gin.Context) {
 	})
 }
 
-func (h *commentHandler) ListComment(c *gin.Context) {
+func (h *placeHandler) ListComment(c *gin.Context) {
 	placeIDParam := c.Param("place_id")
 	placeID, err := strconv.Atoi(placeIDParam)
 	if err != nil {

@@ -62,6 +62,7 @@ func (r *Router) SetupHandler() {
 	categoryHandler := handlers.NewCategoryHandler(r.Logger, r.DB)
 	placeHandler := handlers.NewPlaceHandler(r.Logger, r.DB)
 	tripHandler := handlers.NewTripHandler(r.Logger, r.DB)
+	commentHandler := handlers.NewCommentHandler(r.DB, r.Logger)
 
 	// health check
 	r.Engine.GET("/", func(c *gin.Context) {
@@ -152,12 +153,20 @@ func (r *Router) SetupHandler() {
 			placeAppApi.GET("/", placeHandler.ListPlacePaginate)
 			placeAppApi.GET("/:place_id", placeHandler.DetailPlace)
 			placeAppApi.GET("/all_places", placeHandler.ListAllPlace)
+			placeAppApi.GET("/:place_id/comments", placeHandler.ListComment)
 		}
 
 		tripApi := privateApi.Group("/app/trip")
 		{
 			tripApi.POST("/", tripHandler.CreateTrip)
 			tripApi.GET("/:user_id", tripHandler.ListTrip)
+		}
+
+		commentAppApi := privateApi.Group("/app/comment")
+		{
+			commentAppApi.POST("/", commentHandler.Create)
+			commentAppApi.PATCH("/comment_id", commentHandler.Update)
+			commentAppApi.DELETE("/comment_id", commentHandler.Delete)
 		}
 	}
 }

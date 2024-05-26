@@ -30,9 +30,13 @@ func (i *Place) AfterFind(tx *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	for _, v := range comment {
-		i.Rate += float64(v.Rate)
+	if len(comment) == 0 {
+		i.Rate = 0
+	} else {
+		for _, v := range comment {
+			i.Rate += float64(v.Rate)
+		}
+		i.Rate /= float64(len(comment))
 	}
-	i.Rate /= float64(len(comment))
 	return
 }
