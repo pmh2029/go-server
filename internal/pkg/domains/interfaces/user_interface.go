@@ -22,7 +22,7 @@ type UserUsecase interface {
 	Login(
 		ctx context.Context,
 		req dtos.LoginRequestDto,
-	) (entities.User, string, error)
+	) (entities.User, string, string, error)
 	Update(
 		ctx context.Context,
 		conditions map[string]interface{},

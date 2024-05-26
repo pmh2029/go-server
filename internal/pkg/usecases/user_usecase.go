@@ -10,6 +10,7 @@ import (
 	"go-server/pkg/shared/utils"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -74,32 +75,34 @@ func (u *userUsecase) TakeByConditions(ctx context.Context, conditions map[strin
 func (u *userUsecase) Login(
 	ctx context.Context,
 	req dtos.LoginRequestDto,
-) (entities.User, string, error) {
+) (entities.User, string, string, error) {
 	user, err := u.userRepo.TakeByConditions(ctx, map[string]interface{}{
 		"email": req.Email,
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entities.User{}, "", EmailNotFound
+			return entities.User{}, "", "", EmailNotFound
 		}
-		return entities.User{}, "", err
+		return entities.User{}, "", "", err
 	}
 
 	if !utils.CheckPasswordHash(req.Password, user.Password) {
-		return entities.User{}, "", WrongPassword
+		return entities.User{}, "", "", WrongPassword
 	}
 
+	tokenID := uuid.New().String()
 	accessToken, err := auth.GenerateHS256JWT(map[string]interface{}{
 		"user_id":  user.ID,
 		"sub":      user.Username,
 		"email":    user.Email,
 		"is_admin": user.IsAdmin,
+		"token_id": tokenID,
 	})
 	if err != nil {
-		return entities.User{}, "", err
+		return entities.User{}, "", "", err
 	}
 
-	return user, accessToken, nil
+	return user, accessToken, tokenID, nil
 }
 
 func (u *userUsecase) Update(

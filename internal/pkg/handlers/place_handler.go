@@ -4,8 +4,10 @@ import (
 	"errors"
 	"go-server/internal/pkg/domains/interfaces"
 	"go-server/internal/pkg/domains/models/dtos"
+	"go-server/internal/pkg/domains/models/entities"
 	"go-server/internal/pkg/repositories"
 	"go-server/internal/pkg/usecases"
+	"go-server/pkg/shared/database"
 	"go-server/pkg/shared/utils"
 	"net/http"
 	"strconv"
@@ -405,6 +407,120 @@ func (h *placeHandler) ListAllPlace(c *gin.Context) {
 		Message: "OK",
 		Data: gin.H{
 			"places": places,
+		},
+	})
+}
+
+func (h *commentHandler) ListComment(c *gin.Context) {
+	placeIDParam := c.Param("place_id")
+	placeID, err := strconv.Atoi(placeIDParam)
+	if err != nil {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
+			Message: BadRequest,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	pageData := make(map[string]int)
+	conditions := make(map[string]interface{})
+	conditions["place_id"] = placeID
+	pageQuery, ok := c.GetQuery("page")
+	if ok {
+		page, err := strconv.Atoi(pageQuery)
+		if err != nil {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    400,
+				Message: BadRequest,
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		pageData["page"] = page
+	} else {
+		pageData["page"] = 1
+	}
+
+	perPageQuery, ok := c.GetQuery("per_page")
+	if ok {
+		perPage, err := strconv.Atoi(perPageQuery)
+		if err != nil {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    400,
+				Message: BadRequest,
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		pageData["per_page"] = perPage
+	} else {
+		pageData["per_page"] = 20
+	}
+
+	if rate, ok := c.GetQuery("rate"); ok {
+		conditions["rate"] = rate
+	}
+
+	orderCondition := "updated_at DESC"
+	if order, ok := c.GetQuery("order"); ok {
+		orderInt, err := strconv.Atoi(order)
+		if err != nil {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    400,
+				Message: BadRequest,
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		if orderInt == 2 {
+			orderCondition = "updated_at ASC"
+		}
+	}
+
+	var comments []entities.Comment
+	var count int64
+	err = h.db.Model(&entities.Comment{}).Where(conditions).Count(&count).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code:    0,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	err = h.db.Scopes(database.Pagination(pageData)).Where(conditions).Order(orderCondition).Find(&comments).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code:    0,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "OK",
+		Data: gin.H{
+			"comments":     comments,
+			"page":         pageData["page"],
+			"per_page":     pageData["per_page"],
+			"total_record": count,
+			"total_page":   utils.CalcTotalPage(count, pageData["per_page"]),
 		},
 	})
 }

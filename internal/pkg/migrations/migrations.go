@@ -20,6 +20,7 @@ func Migrate(db *gorm.DB) error {
 		entities.User{},
 		entities.Day{},
 		entities.Comment{},
+		entities.UserToken{},
 	)
 
 	return err

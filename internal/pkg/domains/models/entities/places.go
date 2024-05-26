@@ -24,5 +24,15 @@ type Place struct {
 func (i *Place) AfterFind(tx *gorm.DB) (err error) {
 	i.ImagesResponse = strings.Split(i.Images, "|")
 	i.ImagesResponse = i.ImagesResponse[1 : len(i.ImagesResponse)-1]
+
+	var comment []Comment
+	err = tx.Where("place_id = ?", i.ID).Find(&comment).Error
+	if err != nil {
+		return
+	}
+	for _, v := range comment {
+		i.Rate += float64(v.Rate)
+	}
+	i.Rate /= float64(len(comment))
 	return
 }

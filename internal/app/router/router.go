@@ -95,9 +95,9 @@ func (r *Router) SetupHandler() {
 	}
 
 	privateApi := r.Engine.Group("/api")
-	privateApi.Use(middleware.CheckAuthentication())
+	privateApi.Use(middleware.CheckAuthentication(r.DB))
 	adminApi := r.Engine.Group("/api")
-	adminApi.Use(middleware.CheckAuthentication(), middleware.CheckRole())
+	adminApi.Use(middleware.CheckAuthentication(r.DB), middleware.CheckRole())
 
 	{
 		userApi := privateApi.Group("/app/user")

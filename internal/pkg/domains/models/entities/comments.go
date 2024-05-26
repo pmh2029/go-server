@@ -2,7 +2,7 @@ package entities
 
 type Comment struct {
 	ID      int     `json:"id" binding:"required"`
-	Rate    float64 `json:"rate"`
+	Rate    int `json:"rate"`
 	Comment string  `json:"comment"`
 	UserID  int     `json:"user_id"`
 	User    User    `gorm:"foreignKey:UserID;references:ID" json:"user"`

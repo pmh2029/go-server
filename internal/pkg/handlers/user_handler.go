@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
@@ -97,14 +98,31 @@ func (h *userHandler) Register(c *gin.Context) {
 		return
 	}
 
+	tokenID := uuid.New().String()
 	accessToken, err := auth.GenerateHS256JWT(map[string]interface{}{
 		"user_id":  user.ID,
 		"sub":      user.Username,
 		"email":    user.Email,
 		"is_admin": user.IsAdmin,
+		"token_id": tokenID,
 	})
 	if err != nil {
 		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    0,
+			Message: "Internal Server Error",
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	err = h.db.Create(&entities.UserToken{
+		UserID:  user.ID,
+		TokenID: tokenID,
+	}).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code:    0,
 			Message: "Internal Server Error",
 			Error: &dtos.ErrorResponse{
@@ -219,7 +237,7 @@ func (h *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, err := h.userUsecase.Login(c, req)
+	user, accessToken, tokenID, err := h.userUsecase.Login(c, req)
 	if err != nil {
 		if errors.Is(err, usecases.EmailNotFound) {
 			c.JSON(http.StatusOK, dtos.BaseResponse{
@@ -243,6 +261,22 @@ func (h *userHandler) Login(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code: 0,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
+			},
+		})
+		return
+	}
+
+	userToken := entities.UserToken{
+		UserID:  user.ID,
+		TokenID: tokenID,
+	}
+	err = h.db.Create(&userToken).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code:    0,
+			Message: InternalServerError,
 			Error: &dtos.ErrorResponse{
 				ErrorDetails: err.Error(),
 			},
@@ -277,7 +311,7 @@ func (h *userHandler) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, err := h.userUsecase.Login(c, req)
+	user, accessToken, tokenID, err := h.userUsecase.Login(c, req)
 	if err != nil {
 		if errors.Is(err, usecases.EmailNotFound) {
 			c.JSON(http.StatusOK, dtos.BaseResponse{
@@ -313,6 +347,21 @@ func (h *userHandler) AdminLogin(c *gin.Context) {
 			Message: "Forbidden",
 			Error: &dtos.ErrorResponse{
 				ErrorDetails: "Role invalid",
+			},
+		})
+		return
+	}
+
+	err = h.db.Create(&entities.UserToken{
+		UserID:  user.ID,
+		TokenID: tokenID,
+	}).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code:    0,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err.Error(),
 			},
 		})
 		return
@@ -434,6 +483,15 @@ func (h *userHandler) DetailUser(c *gin.Context) {
 }
 
 func (h *userHandler) ForgotPassword(c *gin.Context) {
+	tokenID := c.MustGet("token_id").(string)
+	if tokenID == "" {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    1,
+			Message: "Unauthorized",
+		})
+		return
+	}
+
 	req := dtos.ForgotPasswordRequestDto{}
 
 	err := c.ShouldBindJSON(&req)
@@ -523,6 +581,13 @@ func (h *userHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
+	go func(tokenID string) {
+		err = h.db.Where("token_id = ?", tokenID).Delete(&entities.UserToken{}).Error
+		if err != nil {
+			return
+		}
+	}(tokenID)
+
 	c.JSON(http.StatusOK, dtos.BaseResponse{
 		Code:    0,
 		Message: "OK",
@@ -531,8 +596,8 @@ func (h *userHandler) ForgotPassword(c *gin.Context) {
 
 func (h *userHandler) ChangePassword(c *gin.Context) {
 	userID := c.MustGet("user_id")
-
-	if userID == nil {
+	tokenID := c.MustGet("token_id").(string)
+	if userID == nil || tokenID == "" {
 		c.JSON(http.StatusOK, dtos.BaseResponse{
 			Code:    1,
 			Message: "Unauthorized",
@@ -618,8 +683,38 @@ func (h *userHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
+	go func(tokenID string) {
+		err = h.db.Where("token_id = ?", tokenID).Delete(&entities.UserToken{}).Error
+		if err != nil {
+			return
+		}
+	}(tokenID)
+
 	c.JSON(http.StatusOK, dtos.BaseResponse{
 		Code:    0,
 		Message: "Change password success",
+	})
+}
+
+func (h *userHandler) Logout(c *gin.Context) {
+	userID := c.MustGet("token_id")
+	if userID == nil {
+		c.JSON(http.StatusUnauthorized, dtos.BaseResponse{
+			Code:    1,
+			Message: "Unauthorized",
+		})
+		return
+	}
+
+	go func() {
+		err := h.db.Where("token_id = ?", userID).Delete(&entities.UserToken{}).Error
+		if err != nil {
+			return
+		}
+	}()
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "Logout success",
 	})
 }
