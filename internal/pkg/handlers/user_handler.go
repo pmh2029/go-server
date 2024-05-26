@@ -64,6 +64,7 @@ func (h *userHandler) Register(c *gin.Context) {
 		Username: req.Username,
 		Email:    req.Email,
 		Password: req.Password,
+		Active:   true,
 	}
 
 	user, err = h.userUsecase.Create(c, user)
@@ -253,6 +254,16 @@ func (h *userHandler) Login(c *gin.Context) {
 			c.JSON(http.StatusOK, dtos.BaseResponse{
 				Code:    2,
 				Message: "Wrong password",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err.Error(),
+				},
+			})
+			return
+		}
+		if !user.Active {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    3,
+				Message: "User not active",
 				Error: &dtos.ErrorResponse{
 					ErrorDetails: err.Error(),
 				},
@@ -483,15 +494,6 @@ func (h *userHandler) DetailUser(c *gin.Context) {
 }
 
 func (h *userHandler) ForgotPassword(c *gin.Context) {
-	tokenID := c.MustGet("token_id").(string)
-	if tokenID == "" {
-		c.JSON(http.StatusOK, dtos.BaseResponse{
-			Code:    1,
-			Message: "Unauthorized",
-		})
-		return
-	}
-
 	req := dtos.ForgotPasswordRequestDto{}
 
 	err := c.ShouldBindJSON(&req)
@@ -581,12 +583,12 @@ func (h *userHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	go func(tokenID string) {
-		err = h.db.Where("token_id = ?", tokenID).Delete(&entities.UserToken{}).Error
+	go func(userID int) {
+		err = h.db.Where("user_id = ?", userID).Delete(&entities.UserToken{}).Error
 		if err != nil {
 			return
 		}
-	}(tokenID)
+	}(user.ID)
 
 	c.JSON(http.StatusOK, dtos.BaseResponse{
 		Code:    0,
