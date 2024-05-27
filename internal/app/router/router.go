@@ -167,8 +167,8 @@ func (r *Router) SetupHandler() {
 		commentAppApi := privateApi.Group("/app/comment")
 		{
 			commentAppApi.POST("/", commentHandler.Create)
-			commentAppApi.PATCH("/comment_id", commentHandler.Update)
-			commentAppApi.DELETE("/comment_id", commentHandler.Delete)
+			commentAppApi.PATCH("/:comment_id", commentHandler.Update)
+			commentAppApi.DELETE("/:comment_id", commentHandler.Delete)
 		}
 
 		userCmsApi := adminApi.Group("/user")
