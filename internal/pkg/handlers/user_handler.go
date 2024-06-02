@@ -756,8 +756,14 @@ func (h *userHandler) UpdateStatus(c *gin.Context) {
 		})
 		return
 	}
+	var isActive bool
+	if req.Status == 1 {
+		isActive = true
+	} else {
+		isActive = false
+	}
 
-	err = h.db.Model(&user).Where("id = ?", user.ID).UpdateColumn("status", req.Status).Error
+	err = h.db.Model(&user).Where("id = ?", user.ID).UpdateColumn("active", isActive).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Message: InternalServerError,
@@ -826,7 +832,22 @@ func (h *userHandler) ListUserPaginate(c *gin.Context) {
 	}
 
 	if status, ok := c.GetQuery("status"); ok {
-		conditions["status"] = status
+		isActive, err := strconv.Atoi(status)
+		if err != nil {
+			c.JSON(http.StatusOK, dtos.BaseResponse{
+				Code:    400,
+				Message: "Bad Request",
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		if isActive == 1 {
+			conditions["active"] = true
+		} else if isActive == 2 {
+			conditions["active"] = false
+		}
 	}
 
 	var count int64
