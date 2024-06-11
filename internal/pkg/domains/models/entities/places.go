@@ -33,10 +33,17 @@ func (i *Place) AfterFind(tx *gorm.DB) (err error) {
 	if len(comment) == 0 {
 		i.Rate = 0
 	} else {
+		i.Rate = 0
 		for _, v := range comment {
 			i.Rate += float64(v.Rate)
 		}
 		i.Rate /= float64(len(comment))
 	}
+	go func() {
+		err = tx.Model(&Place{}).Where("id = ?", i.ID).UpdateColumn("rate", i.Rate).Error
+		if err != nil {
+			return
+		}
+	}()
 	return
 }

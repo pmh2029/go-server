@@ -524,3 +524,83 @@ func (h *placeHandler) ListComment(c *gin.Context) {
 		},
 	})
 }
+
+type placeResponse struct {
+	entities.Place
+	Note      string `json:"note"`
+	VisitTime int    `json:"visit_time"`
+	StartTime int    `json:"start_time"`
+	Vehicle   int    `json:"vehicle"`
+}
+
+func (h *placeHandler) ListSuggestPlace(c *gin.Context) {
+	placeID, ok := c.GetQuery("place_id")
+
+	var places []entities.Place
+	if !ok {
+		err := h.db.Order("rate DESC").Find(&places).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+				Code:    0,
+				Message: InternalServerError,
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+	} else {
+		var place entities.Place
+		err := h.db.Where("id = ?", placeID).First(&place).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+				Code:    0,
+				Message: InternalServerError,
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+		latitude := place.Latitude
+		longitude := place.Longitude
+
+		query := `
+		SELECT *,
+		(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance
+		FROM places
+		WHERE id <> ?
+		ORDER BY distance ASC, rate DESC;
+		`
+		err = h.db.Raw(query, latitude, longitude, latitude, placeID).Scan(&places).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+				Code:    0,
+				Message: InternalServerError,
+				Error: &dtos.ErrorResponse{
+					ErrorDetails: err,
+				},
+			})
+			return
+		}
+	}
+
+	var placeResponses []placeResponse
+	for _, place := range places {
+		placeResponses = append(placeResponses, placeResponse{
+			Place:     place,
+			Note:      "",
+			VisitTime: 30,
+			StartTime: 0,
+			Vehicle:   2,
+		})
+	}
+
+	c.JSON(http.StatusOK, dtos.BaseResponse{
+		Code:    0,
+		Message: "OK",
+		Data: gin.H{
+			"places": placeResponses,
+		},
+	})
+}
