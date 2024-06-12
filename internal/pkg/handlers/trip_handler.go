@@ -6,9 +6,9 @@ import (
 	"go-server/internal/pkg/domains/models/dtos"
 	"go-server/internal/pkg/domains/models/entities"
 	"go-server/pkg/shared/database"
+	"go-server/pkg/shared/utils"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -45,31 +45,6 @@ func (h *tripHandler) CreateTrip(c *gin.Context) {
 		return
 	}
 
-	var users []entities.User
-	if len(req.Users) > 0 {
-		err = h.db.Where("id IN (?) AND active = ?", req.Users, true).Find(&users).Error
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
-				Code:    0,
-				Message: InternalServerError,
-				Error: &dtos.ErrorResponse{
-					ErrorDetails: err,
-				},
-			})
-			return
-		}
-		if len(req.Users) != len(users) {
-			c.JSON(http.StatusOK, dtos.BaseResponse{
-				Code:    1,
-				Message: "User not found",
-				Error: &dtos.ErrorResponse{
-					ErrorDetails: err,
-				},
-			})
-			return
-		}
-	}
-
 	if len(req.Days) == 0 {
 		c.JSON(http.StatusOK, dtos.BaseResponse{
 			Code:    2,
@@ -94,8 +69,9 @@ func (h *tripHandler) CreateTrip(c *gin.Context) {
 			return
 		}
 
-		for _, place := range day.Places {
-			err = h.db.Where("id = ?", place.ID).First(&entities.Place{}).Error
+		for i, place := range day.Places {
+			var placeInDB entities.Place
+			err = h.db.Where("id = ?", place.ID).First(&placeInDB).Error
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					c.JSON(http.StatusOK, dtos.BaseResponse{
@@ -116,6 +92,7 @@ func (h *tripHandler) CreateTrip(c *gin.Context) {
 				})
 				return
 			}
+			day.Places[i].Place = placeInDB
 		}
 
 		places, err := json.Marshal(&day.Places)
@@ -141,6 +118,7 @@ func (h *tripHandler) CreateTrip(c *gin.Context) {
 		trip := entities.Trip{
 			Owner:    req.Owner,
 			Name:     req.Name,
+			Users:    req.Users,
 			FromDate: time.Unix(int64(req.FromDate), 0),
 			ToDate:   time.Unix(int64(req.ToDate), 0),
 		}
@@ -151,29 +129,6 @@ func (h *tripHandler) CreateTrip(c *gin.Context) {
 
 		for i := range days {
 			days[i].TripID = trip.ID
-		}
-
-		var userTrips []entities.UserTrip
-		var strUserIDs []string
-		if len(req.Users) > 0 {
-			for _, userID := range req.Users {
-				userTrips = append(userTrips, entities.UserTrip{
-					UserID: userID,
-					TripID: trip.ID,
-				})
-				strUserIDs = append(strUserIDs, strconv.Itoa(userID))
-			}
-
-			trip.UserIDs = "," + strings.Join(strUserIDs, ",") + ","
-			err = tx.Model(&trip).Updates(trip).Error
-			if err != nil {
-				return err
-			}
-		}
-
-		err = tx.CreateInBatches(&userTrips, len(req.Users)).Error
-		if err != nil {
-			return err
 		}
 
 		err = tx.Create(&days).Error
@@ -214,8 +169,19 @@ func (h *tripHandler) ListTrip(c *gin.Context) {
 		return
 	}
 
-	var trips []entities.Trip
-	err = h.db.Preload("Days").Where("owner = ?", userID).Find(&trips).Error
+	longitudeQuery, longitudeOk := c.GetQuery("longitude")
+	latitudeQuery, latitudeOk := c.GetQuery("latitude")
+	if !longitudeOk || !latitudeOk {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: "Must provide longitude and latitude",
+			},
+		})
+		return
+	}
+	longitude, err := strconv.ParseFloat(longitudeQuery, 64)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
 			Code:    0,
@@ -225,6 +191,39 @@ func (h *tripHandler) ListTrip(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	latitude, err := strconv.ParseFloat(latitudeQuery, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code:    0,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	var trips []entities.Trip
+	err = h.db.Preload("Days").Where("owner = ?", userID).Order("updated_at DESC").Find(&trips).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+			Code:    0,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: err,
+			},
+		})
+		return
+	}
+
+	for _, trip := range trips {
+		for _, day := range trip.Days {
+			for i, place := range day.PlacesJson {
+				day.PlacesJson[i].Distance = utils.Haversine(place.Latitude, place.Longitude, latitude, longitude)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, dtos.BaseResponse{

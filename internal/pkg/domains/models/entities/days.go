@@ -7,11 +7,12 @@ import (
 )
 
 type PlaceInDay struct {
-	ID        int    `json:"id" binding:"required"`
-	Note      string `json:"note"`
-	VisitTime int    `json:"visit_time"`
-	StartTime int    `json:"start_time"`
-	Vehicle   int    `json:"vehicle"`
+	Place
+	Distance  float64 `json:"distance"`
+	Note      string  `json:"note"`
+	VisitTime int     `json:"visit_time"`
+	StartTime int     `json:"start_time"`
+	Vehicle   int     `json:"vehicle"`
 }
 
 type Day struct {

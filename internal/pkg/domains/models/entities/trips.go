@@ -1,8 +1,6 @@
 package entities
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -14,7 +12,7 @@ type Trip struct {
 	FromDate     time.Time `json:"-"`
 	Name         string    `json:"name"`
 	ToDate       time.Time `json:"-"`
-	Users        []User    `gorm:"many2many:user_trips" json:"users"`
+	Users        int       `json:"users"`
 	Owner        int       `json:"owner"`
 	FromDateUnix int       `gorm:"-" json:"from_date"`
 	UserIDs      string    `json:"-"`
@@ -26,18 +24,18 @@ func (i *Trip) AfterFind(tx *gorm.DB) (err error) {
 	i.FromDateUnix = int(i.FromDate.Unix())
 	i.ToDateUnix = int(i.ToDate.Unix())
 
-	if i.UserIDs != "" {
-		userIDs := strings.Split(i.UserIDs, ",")
-		userIDs = userIDs[1 : len(userIDs)-1]
-		userOrder := strings.Join(userIDs, ",")
+	// if i.UserIDs != "" {
+	// 	userIDs := strings.Split(i.UserIDs, ",")
+	// 	userIDs = userIDs[1 : len(userIDs)-1]
+	// 	userOrder := strings.Join(userIDs, ",")
 
-		var users []User
-		err = tx.Where("id IN (?)", userIDs).Order(fmt.Sprintf("FIELD(id, %s)", userOrder)).Find(&users).Error
-		if err != nil {
-			return
-		}
+	// 	var users []User
+	// 	err = tx.Where("id IN (?)", userIDs).Order(fmt.Sprintf("FIELD(id, %s)", userOrder)).Find(&users).Error
+	// 	if err != nil {
+	// 		return
+	// 	}
 
-		i.Users = users
-	}
+	// 	i.Users = users
+	// }
 	return
 }
