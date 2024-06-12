@@ -534,54 +534,59 @@ type placeResponse struct {
 }
 
 func (h *placeHandler) ListSuggestPlace(c *gin.Context) {
-	placeID, ok := c.GetQuery("place_id")
+	longitude, longitudeOk := c.GetQuery("longitude")
+	latitude, latitudeOk := c.GetQuery("latitude")
+	keyword, keywordOk := c.GetQuery("keyword")
 
 	var places []entities.Place
-	if !ok {
-		err := h.db.Order("rate DESC").Find(&places).Error
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
-				Code:    0,
-				Message: InternalServerError,
-				Error: &dtos.ErrorResponse{
-					ErrorDetails: err,
-				},
-			})
-			return
-		}
-	} else {
-		var place entities.Place
-		err := h.db.Where("id = ?", placeID).First(&place).Error
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
-				Code:    0,
-				Message: InternalServerError,
-				Error: &dtos.ErrorResponse{
-					ErrorDetails: err,
-				},
-			})
-			return
-		}
-		latitude := place.Latitude
-		longitude := place.Longitude
+	if !longitudeOk || !latitudeOk {
+		c.JSON(http.StatusOK, dtos.BaseResponse{
+			Code:    400,
+			Message: InternalServerError,
+			Error: &dtos.ErrorResponse{
+				ErrorDetails: "Must provide longitude and latitude",
+			},
+		})
+		return
 
-		query := `
-		SELECT *,
-		(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance
-		FROM places
-		WHERE id <> ?
-		ORDER BY distance ASC, rate DESC;
-		`
-		err = h.db.Raw(query, latitude, longitude, latitude, placeID).Scan(&places).Error
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
-				Code:    0,
-				Message: InternalServerError,
-				Error: &dtos.ErrorResponse{
-					ErrorDetails: err,
-				},
-			})
-			return
+	} else {
+		if !keywordOk {
+			query := `
+			SELECT *,
+			(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance
+			FROM places
+			ORDER BY distance ASC, rate DESC;
+			`
+			err := h.db.Raw(query, latitude, longitude, latitude).Scan(&places).Error
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+					Code:    0,
+					Message: InternalServerError,
+					Error: &dtos.ErrorResponse{
+						ErrorDetails: err,
+					},
+				})
+				return
+			}
+		} else {
+			query := `
+			SELECT *,
+			(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance
+			FROM places
+			WHERE name COLLATE utf8_general_ci LIKE ?
+			ORDER BY distance ASC, rate DESC;
+			`
+			err := h.db.Raw(query, latitude, longitude, latitude, "%"+keyword+"%").Scan(&places).Error
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, dtos.BaseResponse{
+					Code:    0,
+					Message: InternalServerError,
+					Error: &dtos.ErrorResponse{
+						ErrorDetails: err,
+					},
+				})
+				return
+			}
 		}
 	}
 
