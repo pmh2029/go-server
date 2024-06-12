@@ -11,6 +11,7 @@ import (
 	"go-server/pkg/shared/utils"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -527,10 +528,11 @@ func (h *placeHandler) ListComment(c *gin.Context) {
 
 type placeResponse struct {
 	entities.Place
-	Note      string `json:"note"`
-	VisitTime int    `json:"visit_time"`
-	StartTime int    `json:"start_time"`
-	Vehicle   int    `json:"vehicle"`
+	Distance  float64 `json:"distance"`
+	Note      string  `json:"note"`
+	VisitTime int     `json:"visit_time"`
+	StartTime int     `json:"start_time"`
+	Vehicle   int     `json:"vehicle"`
 }
 
 func (h *placeHandler) ListSuggestPlace(c *gin.Context) {
@@ -538,7 +540,7 @@ func (h *placeHandler) ListSuggestPlace(c *gin.Context) {
 	latitude, latitudeOk := c.GetQuery("latitude")
 	keyword, keywordOk := c.GetQuery("keyword")
 
-	var places []entities.Place
+	var places []placeResponse
 	if !longitudeOk || !latitudeOk {
 		c.JSON(http.StatusOK, dtos.BaseResponse{
 			Code:    400,
@@ -553,9 +555,9 @@ func (h *placeHandler) ListSuggestPlace(c *gin.Context) {
 		if !keywordOk {
 			query := `
 			SELECT *,
-			(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance
+			(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS Distance
 			FROM places
-			ORDER BY distance ASC, rate DESC;
+			ORDER BY Distance ASC, rate DESC;
 			`
 			err := h.db.Raw(query, latitude, longitude, latitude).Scan(&places).Error
 			if err != nil {
@@ -592,8 +594,11 @@ func (h *placeHandler) ListSuggestPlace(c *gin.Context) {
 
 	var placeResponses []placeResponse
 	for _, place := range places {
+		place.ImagesResponse = strings.Split(place.Images, "|")
+		place.ImagesResponse = place.ImagesResponse[1 : len(place.ImagesResponse)-1]
 		placeResponses = append(placeResponses, placeResponse{
-			Place:     place,
+			Place:     place.Place,
+			Distance:  place.Distance,
 			Note:      "",
 			VisitTime: 30,
 			StartTime: 0,
