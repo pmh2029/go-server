@@ -17,6 +17,7 @@ type Trip struct {
 	FromDateUnix int       `gorm:"-" json:"from_date"`
 	UserIDs      string    `json:"-"`
 	ToDateUnix   int       `gorm:"-" json:"to_date"`
+	TripFee      float64   `gorm:"-" json:"trip_fee"`
 	BaseEntity
 }
 

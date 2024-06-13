@@ -163,6 +163,7 @@ func (r *Router) SetupHandler() {
 		{
 			tripApi.POST("/", tripHandler.CreateTrip)
 			tripApi.GET("/:user_id", tripHandler.ListTrip)
+			tripApi.GET("/:user_id/:trip_id", tripHandler.GetDetailTrip)
 		}
 
 		commentAppApi := privateApi.Group("/app/comment")
