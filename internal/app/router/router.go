@@ -162,8 +162,10 @@ func (r *Router) SetupHandler() {
 		tripApi := privateApi.Group("/app/trip")
 		{
 			tripApi.POST("/", tripHandler.CreateTrip)
-			tripApi.GET("/:user_id", tripHandler.ListTrip)
-			tripApi.GET("/:user_id/:trip_id", tripHandler.GetDetailTrip)
+			tripApi.GET("/", tripHandler.ListTrip)
+			tripApi.GET("/:trip_id", tripHandler.GetDetailTrip)
+			tripApi.PATCH("/:trip_id", tripHandler.UpdateTrip)
+			tripApi.DELETE("/:trip_id", tripHandler.DeleteTrip)
 		}
 
 		commentAppApi := privateApi.Group("/app/comment")
